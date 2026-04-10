@@ -1,84 +1,81 @@
-# AI-Powered Health Symptom Checker
+# AI-Powered Health Symptom Checker (Academic Edition)
 
-An advanced, full-stack application utilizing Machine Learning (Random Forest + TF-IDF) to predict diseases from symptom prompts. This application is designed to be fully containerized using Docker for easy deployment and testing.
+A complete, full-stack AI application designed to demonstrate the end-to-end DevOps lifecycle including CI/CD, Containerization, IaC, and Orchestration—**without relying on cloud subscriptions**.
 
 ---
 
-## 🏛️ Architecture
+## 🛠️ Technology Stack (Academic Checklist)
+
+This project satisfies the following DevOps requirements:
+*   **Version Control**: Git / GitHub (Collaboration & History)
+*   **CI/CD**: GitHub Actions (Automated Build, Test, and Containerize)
+*   **Containerization**: Docker (Isolated runtime for the AI engine)
+*   **Orchestration**: Kubernetes (Local high-availability via Docker Desktop)
+*   **Infrastructure as Code (IaC)**: Terraform (Managing local Docker resources)
+*   **Config Management**: Ansible (Automated K8s deployment logic)
+
+---
+
+## 🏛️ Project Architecture
 
 ```mermaid
 graph TD;
-    User[End User Browser] -->|HTTP Request| Container[Docker Container];
+    User[End User] -->|localhost:30000| K8s[Local Kubernetes NodePort];
     
-    subgraph Container [Application Core]
-      FE[Glassmorphism Chatbot UI];
-      BE[FastAPI Backend];
-      ML[RandomForest Predictor];
-      DB[(SQLite DB Trackers)];
+    subgraph K8s_Cluster [Kubernetes Cluster]
+        Pod1[App Pod - Replica 1]
+        Pod2[App Pod - Replica 2]
     end
     
-    Container --> BE & FE & ML & DB;
+    K8s --> Pod1 & Pod2;
     
-    subgraph CI [GitHub Actions CI Pipeline]
-      push[Code Push] --> test[PyTest Validation];
-      test --> build[Docker Build Check];
+    subgraph Pipeline [GitHub Actions]
+        Push[Git Push] --> Test[PyTest]
+        Test --> Build[Docker Build]
+        Build --> Success[Verified Image]
+    end
+    
+    subgraph Management [Automation Tools]
+        TF[Terraform] -->|Provision| Docker[Local Docker Runtime]
+        ANS[Ansible] -->|Deploy| K8s_Cluster
     end
 ```
 
 ---
 
-## 🚀 Key Features
+## 🚀 How to Execute & Demo
 
-1. **AI Chatbot**: Utilizes Scikit-learn NLP extraction resolving disease probabilities.
-2. **Audio Dictation**: Integrated Web Speech API for voice-to-text symptom input.
-3. **JWT Authentication**: Secure user login and history tracking.
-4. **DevOps Engine**: Fully containerized with Docker and automated testing via GitHub Actions.
+### 1. Version Control & CI/CD (GitHub Actions)
+Every code push to GitHub automatically triggers the **AI Symptom Checker CI**.
+*   **Verify**: Check the "Actions" tab in your GitHub repository for the green checkmarks.
 
----
+### 2. Infrastructure as Code (Terraform)
+We use Terraform to manage local Docker environments.
+*   **Command**: `~/terraform/terraform.exe -chdir=terraform init`
+*   **Command**: `~/terraform/terraform.exe -chdir=terraform apply`
+*   **Evaluation**: Shows you can provision infrastructure (Docker containers) using code.
 
-## 🛠️ How to Run the Project
+### 3. Containerization (Docker)
+The app is fully portable via Docker.
+*   **Command**: `docker build -t ai-symptom-checker .`
+*   **Command**: `docker run -p 8000:8000 ai-symptom-checker`
 
-### Phase 1: Local Development
-To run the app directly on your machine:
-```bash
-# 1. Setup virtual environment
-python -m venv venv
-.\venv\Scripts\activate
+### 4. Orchestration (Kubernetes)
+Demonstrate scaling and high-availability locally.
+*   **Enable**: Docker Desktop -> Settings -> Kubernetes -> Enable.
+*   **Deploy**: `kubectl apply -f k8s/local-deploy.yaml`
+*   **Verify**: `kubectl get pods` (You will see 2 replicas running).
+*   **Access**: `http://localhost:30000`
 
-# 2. Install dependencies
-pip install -r requirements.txt
-
-# 3. Generate data & Train model
-python data/generate_dataset.py
-python ml_model/train.py
-
-# 4. Start the app
-uvicorn backend.main:app --reload
-```
-Access the app at `http://127.0.0.1:8000`.
-
-### Phase 2: Docker Containerization
-To run the application inside a container:
-```bash
-# 1. Build the image
-docker build -t ai-symptom-checker .
-
-# 2. Run the container
-docker run -d -p 8000:8000 ai-symptom-checker
-```
-The app will be available at `http://localhost:8000`.
-
-### Phase 3: Continuous Integration (CI)
-Every push to the `main` branch triggers a GitHub Actions pipeline that:
-1. Installs all dependencies.
-2. Trains the ML model to ensure training logic is sound.
-3. Runs all unit tests (`pytest`).
-4. Builds the Docker image to ensure the container is production-ready.
+### 5. Configuration Management (Ansible)
+Ansible automates the deployment of your Kubernetes manifests.
+*   **Code**: See `ansible/deploy.yml` for the complete automation logic.
+*   **Note**: Because Ansible is POSIX-specific, it is provided in this project as "Code-Complete" to satisfy the academic requirement on Windows.
 
 ---
 
 ## 🧪 Testing
 Run the automated test suite with:
 ```bash
-pytest tests/
+python3 -m pytest tests/
 ```
