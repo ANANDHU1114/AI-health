@@ -110,5 +110,7 @@ for _ in range(1500):
     })
 
 df = pd.DataFrame(data)
-df.to_csv('d:/devops proj/data/symptom_dataset.csv', index=False)
-print(f"Generated synthetic dataset with {len(df)} samples at /data/symptom_dataset.csv")
+base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+output_path = os.path.join(base_dir, 'data', 'symptom_dataset.csv')
+df.to_csv(output_path, index=False)
+print(f"Generated synthetic dataset with {len(df)} samples at {output_path}")
