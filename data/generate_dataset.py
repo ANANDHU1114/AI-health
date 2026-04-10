@@ -1,5 +1,6 @@
 import pandas as pd
 import random
+import os
 
 # Core diseases with robust mock data
 DISEASES = [
