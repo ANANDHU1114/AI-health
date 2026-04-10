@@ -27,4 +27,5 @@ def on_startup():
 app.include_router(router, prefix="/api")
 
 # Mount frontend
-app.mount("/", StaticFiles(directory="d:/devops proj/frontend", html=True), name="frontend")
+frontend_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "frontend")
+app.mount("/", StaticFiles(directory=frontend_dir, html=True), name="frontend")

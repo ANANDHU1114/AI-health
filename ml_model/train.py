@@ -10,7 +10,8 @@ import os
 def train():
     print("Loading dataset...")
     # Load dataset
-    df = pd.read_csv('d:/devops proj/data/symptom_dataset.csv')
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    df = pd.read_csv(os.path.join(base_dir, 'data', 'symptom_dataset.csv'))
     
     # Feature & Target
     X_text = df['Symptoms']
@@ -44,10 +45,11 @@ def train():
     
     # Save artifacts
     print("Saving model and artifacts...")
-    os.makedirs('d:/devops proj/ml_model', exist_ok=True)
-    joblib.dump(model, 'd:/devops proj/ml_model/model.joblib')
-    joblib.dump(vectorizer, 'd:/devops proj/ml_model/vectorizer.joblib')
-    joblib.dump(disease_info, 'd:/devops proj/ml_model/disease_info.joblib')
+    model_dir = os.path.join(base_dir, 'ml_model')
+    os.makedirs(model_dir, exist_ok=True)
+    joblib.dump(model, os.path.join(model_dir, 'model.joblib'))
+    joblib.dump(vectorizer, os.path.join(model_dir, 'vectorizer.joblib'))
+    joblib.dump(disease_info, os.path.join(model_dir, 'disease_info.joblib'))
     print("Saved to /ml_model/ successfully.")
 
 if __name__ == '__main__':

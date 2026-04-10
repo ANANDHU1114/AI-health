@@ -9,7 +9,7 @@ _disease_info = None
 
 def load_artifacts():
     global _model, _vectorizer, _disease_info
-    base_path = 'd:/devops proj/ml_model'
+    base_path = os.path.dirname(os.path.abspath(__file__))
     if _model is None:
         _model = joblib.load(os.path.join(base_path, 'model.joblib'))
     if _vectorizer is None:

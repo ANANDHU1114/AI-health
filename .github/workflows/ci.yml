@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: Azure Enterprise CI/CD Pipeline
 
 on:
   push:
@@ -8,8 +8,14 @@ on:
     branches:
       - main
 
+env:
+  ACR_NAME: "aihealthacrdevops" # Ensure this matches your Terraform configuration
+  AKS_CLUSTER_NAME: "ai-health-aks"
+  RESOURCE_GROUP: "ai-health-rg"
+  IMAGE_NAME: "ai-symptom-checker"
+
 jobs:
-  test:
+  test-and-build:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
@@ -20,35 +26,65 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install dependencies
+      - name: Install PyTest dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Generate Mock Data & Train Model
+      - name: Generate Data & Train Model
         run: |
           python data/generate_dataset.py
           python ml_model/train.py
 
-      - name: Run Tests
+      - name: Execute Automated Test Pipelines
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest tests/
 
-  build-docker:
-    needs: test
+  deploy-to-azure:
+    needs: test-and-build
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
-        
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
 
-      - name: Build Docker Image
+      # 1. Login to Azure using Service Principal credentials stored in GitHub Secrets
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      # 2. Login to Azure Container Registry
+      - name: ACR Login
         run: |
-          docker build -t ai-symptom-checker:latest .
+          az acr login --name ${{ env.ACR_NAME }}
 
-      # Add push steps later if connecting to a specific cloud registry provider (e.g., GHCR, ECR, DockerHub)
+      # 3. Build & Push Docker Image
+      - name: Build and Push Docker Image
+        run: |
+          IMAGE_TAG=${{ github.sha }}
+          docker build -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG .
+          docker tag ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:$IMAGE_TAG
+          docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:latest
+
+      # 4. Get AKS KubeConfig mapping
+      - name: Setup Kubernetes Context
+        run: |
+          az aks get-credentials --resource-group ${{ env.RESOURCE_GROUP }} --name ${{ env.AKS_CLUSTER_NAME }}
+
+      # 5. Execute Deployment using Ansible
+      - name: Install Ansible & Kubernetes module
+        run: |
+          pip install ansible kubernetes
+          ansible-galaxy collection install kubernetes.core
+          
+      - name: Substitute Image Tag in YAML dynamically
+        run: |
+          sed -i "s|aihealthacrdevops.azurecr.io/ai-symptom-checker:latest|${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}|g" k8s/deployment.yaml
+
+      - name: Run Ansible Playbook
+        run: |
+          ansible-playbook ansible/deploy.yml
