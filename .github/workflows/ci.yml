@@ -27,14 +27,14 @@ jobs:
 
       - name: Generate Data & Train Model
         run: |
-          python data/generate_dataset.py
-          python ml_model/train.py
+          python3 data/generate_dataset.py
+          python3 ml_model/train.py
 
       - name: Execute Automated Tests
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          pytest tests/
+          python3 -m pytest tests/
 
       - name: Build Docker Image
         run: |
